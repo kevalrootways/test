@@ -35,7 +35,8 @@ class UpdateRoleTemplateRequest extends FormRequest
                     }
                     $hasSelectedPermission = false;
                     foreach ($value as $permission => $enabled) {
-                        if ($enabled === true) {
+                        // Handle both boolean true and string '1' values
+                        if ($enabled === true || $enabled === '1' || $enabled === 1) {
                             $hasSelectedPermission = true;
                             break;
                         }

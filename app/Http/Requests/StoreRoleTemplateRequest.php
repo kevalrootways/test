@@ -26,7 +26,7 @@ class StoreRoleTemplateRequest extends FormRequest
                     }
                     $hasSelectedPermission = false;
                     foreach ($value as $permission => $enabled) {
-                        if ($enabled === true) {
+                        if ($enabled === true || $enabled === '1' || $enabled === 1) {
                             $hasSelectedPermission = true;
                             break;
                         }
@@ -42,4 +42,3 @@ class StoreRoleTemplateRequest extends FormRequest
         ];
     }
 }
-

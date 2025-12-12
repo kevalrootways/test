@@ -26,25 +26,47 @@ class RoleTemplateController extends Controller
 
             $templatesData = RoleTemplateResource::collection($templates)->resolve();
 
+            $permissions = Permission::where('guard_name', 'web')
+                ->orderBy('name')
+                ->pluck('name')
+                ->toArray();
+
             return Inertia::render('role-templates/manage', [
                 'templates' => $templatesData,
                 'totalTemplates' => $templates->count(),
                 'defaultTemplates' => $templates->where('is_default', true)->count(),
                 'customTemplates' => $templates->where('is_default', false)->count(),
+                'availablePermissions' => $permissions,
+                'csrfToken' => csrf_token(),
             ]);
         } catch (\Throwable $th) {
+            logError('RoleTemplateController@index', $th);
+            $permissions = Permission::where('guard_name', 'web')
+                ->orderBy('name')
+                ->pluck('name')
+                ->toArray();
+
             return Inertia::render('role-templates/manage', [
                 'templates' => [],
                 'totalTemplates' => 0,
                 'defaultTemplates' => 0,
                 'customTemplates' => 0,
+                'availablePermissions' => $permissions,
+                'csrfToken' => csrf_token(),
             ]);
         }
     }
 
     public function create(): Response
     {
-        return Inertia::render('role-templates/create');
+        $permissions = Permission::where('guard_name', 'web')
+            ->orderBy('name')
+            ->pluck('name')
+            ->toArray();
+
+        return Inertia::render('role-templates/create', [
+            'availablePermissions' => $permissions,
+        ]);
     }
 
     public function store(StoreRoleTemplateRequest $request): RedirectResponse
@@ -87,8 +109,9 @@ class RoleTemplateController extends Controller
             DB::commit();
             return redirect()->route('admin.role-templates.index')->with('success', 'Role template created successfully');
         } catch (\Throwable $th) {
+            logError('RoleTemplateController@store', $th);
             DB::rollBack();
-            return back()->withErrors(['error' => 'Failed to create role template: ' . $th->getMessage()])->withInput();
+            return back()->with('error', 'Failed to create role template')->withInput();
         }
     }
 
@@ -120,8 +143,14 @@ class RoleTemplateController extends Controller
 
             $templateData = (new RoleTemplateResource($role))->resolve();
 
+            $permissions = Permission::where('guard_name', 'web')
+                ->orderBy('name')
+                ->pluck('name')
+                ->toArray();
+
             return Inertia::render('role-templates/edit', [
                 'template' => $templateData,
+                'availablePermissions' => $permissions,
             ]);
         } catch (\Throwable $th) {
             abort(404, 'Template not found');
@@ -174,8 +203,9 @@ class RoleTemplateController extends Controller
             DB::commit();
             return redirect()->route('admin.role-templates.index')->with('success', 'Role template updated successfully');
         } catch (\Throwable $th) {
+            logError('RoleTemplateController@update', $th);
             DB::rollBack();
-            return back()->withErrors(['error' => 'Failed to update role template: ' . $th->getMessage()])->withInput();
+            return back()->with('error', 'Failed to update role template')->withInput();
         }
     }
 
@@ -188,7 +218,7 @@ class RoleTemplateController extends Controller
                 ->firstOrFail();
 
             if ($role->is_default) {
-                return back()->withErrors(['error' => 'Cannot delete default templates. You can edit them instead.']);
+                return back()->with('error', 'Cannot delete default templates. You can edit them instead.');
             }
 
             $role->permissions()->detach();
@@ -197,8 +227,9 @@ class RoleTemplateController extends Controller
             DB::commit();
             return redirect()->route('admin.role-templates.index')->with('success', 'Role template deleted successfully');
         } catch (\Throwable $th) {
+            logError('RoleTemplateController@destroy', $th);
             DB::rollBack();
-            return back()->withErrors(['error' => 'Failed to delete role template: ' . $th->getMessage()]);
+            return back()->with('error', 'Failed to delete role template');
         }
     }
 }

@@ -1,6 +1,7 @@
+import RoleTemplateController from '@/actions/App/Http/Controllers/Admin/RoleTemplateController';
 import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/app-layout';
-import { Form, Head } from '@inertiajs/react';
+import { Form, Head, router } from '@inertiajs/react';
 import { LoaderCircle } from 'lucide-react';
 import RoleTemplateInput from './input';
 
@@ -9,39 +10,48 @@ interface EditRoleTemplateProps {
         id?: string;
         name?: string;
         description?: string;
-        permissions?: {
-            dashboard?: boolean;
-            products?: boolean;
-            inventory?: boolean;
-            orders?: boolean;
-            accounts?: boolean;
-            warranty?: boolean;
-            reports?: boolean;
-            admin?: boolean;
-        };
+        permissions?: Record<string, boolean>;
         commissionEnabled?: boolean;
         defaultCommission?: number;
         isDefault?: boolean;
         createdDate?: string;
     };
+    availablePermissions?: string[];
     onSuccess?: () => void;
 }
 
 const EditRoleTemplate = ({
     template,
+    availablePermissions = [],
     onSuccess,
 }: EditRoleTemplateProps) => {
-    const templateData = (template as any)?.data || template;
+    const templateData = template;
     const templateId = templateData?.id || '';
+    const initialPermissions: Record<string, boolean> = {};
+    availablePermissions.forEach((perm) => {
+        initialPermissions[perm] =
+            templateData?.permissions?.[perm] ?? perm === 'dashboard';
+    });
 
     return (
         <>
             <Head title="Edit Role Template" />
             <Form
-                method="put"
-                action={`/admin/role-templates/${templateId}`}
-                onSuccess={onSuccess || (() => {})}
-                preserveScroll
+                {...RoleTemplateController.update.form({ template: templateId })}
+                data={{
+                    name: templateData?.name || '',
+                    description: templateData?.description || '',
+                    permissions: initialPermissions,
+                    commissionEnabled: templateData?.commissionEnabled || false,
+                    defaultCommission: templateData?.defaultCommission || 0,
+                }}
+                onSuccess={() => {
+                    if (onSuccess) {
+                        onSuccess();
+                    } else {
+                        router.visit(RoleTemplateController.index().url);
+                    }
+                }}
             >
                 {({ processing, errors }) => (
                     <div className="p-0">
@@ -49,17 +59,20 @@ const EditRoleTemplate = ({
                             <RoleTemplateInput
                                 errors={errors}
                                 data={templateData}
+                                availablePermissions={availablePermissions}
                             />
                         </div>
                         <div className="flex justify-end gap-3 border-t border-gray-200 pt-4">
-                            <Button
-                                type="button"
-                                variant="outline"
-                                onClick={onSuccess}
-                            >
-                                Cancel
-                            </Button>
-                            <Button type="submit" disabled={processing}>
+                            {onSuccess && (
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    onClick={onSuccess}
+                                >
+                                    Cancel
+                                </Button>
+                            )}
+                            <Button type="submit" disabled={processing} className="bg-blue-600 text-white hover:bg-blue-700">
                                 {processing && (
                                     <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
                                 )}
@@ -78,4 +91,3 @@ EditRoleTemplate.layout = (page: React.ReactNode) => (
 );
 
 export default EditRoleTemplate;
-

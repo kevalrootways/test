@@ -118,47 +118,47 @@ const ManageUsers = ({
             <Head title="User Management" />
             <div className="flex h-full flex-1 flex-col gap-6 overflow-x-auto rounded-xl p-4 md:p-6">
                 <div className="mb-8">
-                    <h1 className="text-gray-900 mb-2">Admin Panel</h1>
+                    <h1 className="mb-2 text-gray-900">Admin Panel</h1>
                     <p className="text-gray-600">
                         Manage system users, permissions, and company branding
                     </p>
                 </div>
 
                 {/* Stats */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div className="bg-white rounded-lg border border-gray-200 p-6">
+                <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+                    <div className="rounded-lg border border-gray-200 bg-white p-6">
                         <div className="flex items-center gap-3">
-                            <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                                <Shield className="w-6 h-6 text-blue-600" />
+                            <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-blue-100">
+                                <Shield className="h-6 w-6 text-blue-600" />
                             </div>
                             <div>
-                                <p className="text-gray-600 text-sm mb-1">
+                                <p className="mb-1 text-sm text-gray-600">
                                     Total Users
                                 </p>
                                 <p className="text-gray-900">{totalUsers}</p>
                             </div>
                         </div>
                     </div>
-                    <div className="bg-white rounded-lg border border-gray-200 p-6">
+                    <div className="rounded-lg border border-gray-200 bg-white p-6">
                         <div className="flex items-center gap-3">
-                            <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                                <Shield className="w-6 h-6 text-green-600" />
+                            <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-green-100">
+                                <Shield className="h-6 w-6 text-green-600" />
                             </div>
                             <div>
-                                <p className="text-gray-600 text-sm mb-1">
+                                <p className="mb-1 text-sm text-gray-600">
                                     Active Users
                                 </p>
                                 <p className="text-gray-900">{activeUsers}</p>
                             </div>
                         </div>
                     </div>
-                    <div className="bg-white rounded-lg border border-gray-200 p-6">
+                    <div className="rounded-lg border border-gray-200 bg-white p-6">
                         <div className="flex items-center gap-3">
-                            <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                                <Shield className="w-6 h-6 text-purple-600" />
+                            <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-purple-100">
+                                <Shield className="h-6 w-6 text-purple-600" />
                             </div>
                             <div>
-                                <p className="text-gray-600 text-sm mb-1">
+                                <p className="mb-1 text-sm text-gray-600">
                                     Admins
                                 </p>
                                 <p className="text-gray-900">{adminUsers}</p>
@@ -168,35 +168,43 @@ const ManageUsers = ({
                 </div>
 
                 {/* Filters and Actions */}
-                <div className="bg-white rounded-lg border border-gray-200 p-6">
-                    <div className="flex flex-wrap gap-4 items-center justify-between">
-                        <div className="flex flex-wrap gap-4 flex-1">
-                            <div className="relative flex-1 min-w-[200px] max-w-md">
-                                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                <div className="rounded-lg border border-gray-200 bg-white p-6">
+                    <div className="flex flex-wrap items-center justify-between gap-4">
+                        <div className="flex flex-1 flex-wrap gap-4">
+                            <div className="relative max-w-md min-w-[200px] flex-1">
+                                <Search className="absolute top-1/2 left-3 h-5 w-5 -translate-y-1/2 transform text-gray-400" />
                                 <input
                                     type="text"
                                     placeholder="Search users..."
                                     value={searchTerm}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
-                                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    onChange={(e) =>
+                                        setSearchTerm(e.target.value)
+                                    }
+                                    className="w-full rounded-lg border border-gray-300 py-2 pr-4 pl-10 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                                 />
                             </div>
 
                             <select
                                 value={roleFilter}
                                 onChange={(e) => setRoleFilter(e.target.value)}
-                                className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                className="rounded-lg border border-gray-300 px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                             >
                                 <option value="all">All Roles</option>
                                 <option value="super admin">Super Admin</option>
                                 <option value="manager">Manager</option>
                                 <option value="sales">Sales</option>
-                                <option value="inventory">Inventory Manager</option>
+                                <option value="inventory">
+                                    Inventory Manager
+                                </option>
                                 <option value="support">Support</option>
                                 <option value="analyst">Analyst</option>
                                 <option value="dealers">Dealers</option>
-                                <option value="insurance">Insurance Industry</option>
-                                <option value="distributors">Distributors</option>
+                                <option value="insurance">
+                                    Insurance Industry
+                                </option>
+                                <option value="distributors">
+                                    Distributors
+                                </option>
                                 <option value="store user">Store User</option>
                             </select>
                         </div>
@@ -205,40 +213,40 @@ const ManageUsers = ({
                             onClick={() => setShowAddModal(true)}
                             className="bg-blue-600 text-white hover:bg-blue-700"
                         >
-                            <Plus className="w-4 h-4 mr-2" />
+                            <Plus className="mr-2 h-4 w-4" />
                             Add User
                         </Button>
                     </div>
                 </div>
 
                 {/* Users Table */}
-                <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+                <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
                     <div className="overflow-x-auto">
                         <table className="w-full">
                             <thead className="bg-gray-50">
                                 <tr>
-                                    <th className="px-6 py-3 text-left text-gray-600 text-sm">
+                                    <th className="px-6 py-3 text-left text-sm text-gray-600">
                                         User ID
                                     </th>
-                                    <th className="px-6 py-3 text-left text-gray-600 text-sm">
+                                    <th className="px-6 py-3 text-left text-sm text-gray-600">
                                         Name
                                     </th>
-                                    <th className="px-6 py-3 text-left text-gray-600 text-sm">
+                                    <th className="px-6 py-3 text-left text-sm text-gray-600">
                                         Contact
                                     </th>
-                                    <th className="px-6 py-3 text-left text-gray-600 text-sm">
+                                    <th className="px-6 py-3 text-left text-sm text-gray-600">
                                         Role
                                     </th>
-                                    <th className="px-6 py-3 text-left text-gray-600 text-sm">
+                                    <th className="px-6 py-3 text-left text-sm text-gray-600">
                                         Permissions
                                     </th>
-                                    <th className="px-6 py-3 text-left text-gray-600 text-sm">
+                                    <th className="px-6 py-3 text-left text-sm text-gray-600">
                                         Last Login
                                     </th>
-                                    <th className="px-6 py-3 text-left text-gray-600 text-sm">
+                                    <th className="px-6 py-3 text-left text-sm text-gray-600">
                                         Status
                                     </th>
-                                    <th className="px-6 py-3 text-left text-gray-600 text-sm">
+                                    <th className="px-6 py-3 text-left text-sm text-gray-600">
                                         Actions
                                     </th>
                                 </tr>
@@ -255,7 +263,10 @@ const ManageUsers = ({
                                     </tr>
                                 ) : (
                                     filteredUsers.map((user) => (
-                                        <tr key={user.id} className="hover:bg-gray-50">
+                                        <tr
+                                            key={user.id}
+                                            className="hover:bg-gray-50"
+                                        >
                                             <td className="px-6 py-4 text-gray-900">
                                                 {user.id}
                                             </td>
@@ -264,19 +275,19 @@ const ManageUsers = ({
                                             </td>
                                             <td className="px-6 py-4">
                                                 <div className="space-y-1">
-                                                    <div className="flex items-center gap-2 text-gray-600 text-sm">
-                                                        <Mail className="w-3 h-3" />
+                                                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                                                        <Mail className="h-3 w-3" />
                                                         {user.email}
                                                     </div>
-                                                    <div className="flex items-center gap-2 text-gray-600 text-sm">
-                                                        <Phone className="w-3 h-3" />
+                                                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                                                        <Phone className="h-3 w-3" />
                                                         {user.phone}
                                                     </div>
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4">
                                                 <span
-                                                    className={`inline-flex px-2 py-1 rounded-full text-xs ${getRoleColor(
+                                                    className={`inline-flex rounded-full px-2 py-1 text-xs ${getRoleColor(
                                                         user.role,
                                                     )}`}
                                                 >
@@ -284,21 +295,24 @@ const ManageUsers = ({
                                                 </span>
                                             </td>
                                             <td className="px-6 py-4">
-                                                <div className="flex flex-wrap gap-1 max-w-xs">
+                                                <div className="flex max-w-xs flex-wrap gap-1">
                                                     {user.permissions
                                                         ?.slice(0, 3)
                                                         .map((perm, idx) => (
                                                             <span
                                                                 key={idx}
-                                                                className="inline-flex px-2 py-0.5 bg-gray-100 text-gray-700 rounded text-xs"
+                                                                className="inline-flex rounded bg-gray-100 px-2 py-0.5 text-xs text-gray-700"
                                                             >
                                                                 {perm}
                                                             </span>
                                                         ))}
-                                                    {(user.permissions?.length || 0) > 3 && (
-                                                        <span className="inline-flex px-2 py-0.5 bg-gray-100 text-gray-700 rounded text-xs">
+                                                    {(user.permissions
+                                                        ?.length || 0) > 3 && (
+                                                        <span className="inline-flex rounded bg-gray-100 px-2 py-0.5 text-xs text-gray-700">
                                                             +
-                                                            {(user.permissions?.length || 0) - 3}
+                                                            {(user.permissions
+                                                                ?.length || 0) -
+                                                                3}
                                                         </span>
                                                     )}
                                                 </div>
@@ -308,7 +322,7 @@ const ManageUsers = ({
                                             </td>
                                             <td className="px-6 py-4">
                                                 <span
-                                                    className={`inline-flex px-2 py-1 rounded-full text-xs ${getStatusColor(
+                                                    className={`inline-flex rounded-full px-2 py-1 text-xs ${getStatusColor(
                                                         user.status,
                                                     )}`}
                                                 >
@@ -318,29 +332,35 @@ const ManageUsers = ({
                                             <td className="px-6 py-4">
                                                 <div className="flex items-center gap-2">
                                                     <button
-                                                        className="p-1 hover:bg-gray-100 rounded transition-colors"
+                                                        className="rounded p-1 transition-colors hover:bg-gray-100"
                                                         title="View"
                                                     >
-                                                        <Eye className="w-4 h-4 text-gray-600" />
+                                                        <Eye className="h-4 w-4 text-gray-600" />
                                                     </button>
                                                     <button
-                                                        className="p-1 hover:bg-gray-100 rounded transition-colors"
+                                                        className="rounded p-1 transition-colors hover:bg-gray-100"
                                                         title="Edit"
                                                         onClick={() => {
-                                                            setSelectedUser(user);
-                                                            setShowEditModal(true);
+                                                            setSelectedUser(
+                                                                user,
+                                                            );
+                                                            setShowEditModal(
+                                                                true,
+                                                            );
                                                         }}
                                                     >
-                                                        <Edit className="w-4 h-4 text-gray-600" />
+                                                        <Edit className="h-4 w-4 text-gray-600" />
                                                     </button>
                                                     <button
-                                                        className="p-1 hover:bg-gray-100 rounded transition-colors"
+                                                        className="rounded p-1 transition-colors hover:bg-gray-100"
                                                         title="Delete"
                                                         onClick={() =>
-                                                            handleDeleteUser(user.id)
+                                                            handleDeleteUser(
+                                                                user.id,
+                                                            )
                                                         }
                                                     >
-                                                        <Trash2 className="w-4 h-4 text-red-600" />
+                                                        <Trash2 className="h-4 w-4 text-red-600" />
                                                     </button>
                                                 </div>
                                             </td>
@@ -352,7 +372,7 @@ const ManageUsers = ({
                     </div>
 
                     {/* Pagination */}
-                    <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
+                    <div className="flex items-center justify-between border-t border-gray-200 px-6 py-4">
                         <p className="text-sm text-gray-600">
                             Showing {filteredUsers.length} of {users.length}{' '}
                             users
@@ -361,7 +381,10 @@ const ManageUsers = ({
                             <Button variant="outline" size="sm">
                                 Previous
                             </Button>
-                            <Button size="sm" className="bg-blue-600 text-white">
+                            <Button
+                                size="sm"
+                                className="bg-blue-600 text-white"
+                            >
                                 1
                             </Button>
                             <Button variant="outline" size="sm">
@@ -374,12 +397,12 @@ const ManageUsers = ({
 
             {/* Add User Modal */}
             {showAddModal && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-                    <div className="bg-white rounded-lg shadow-xl w-full max-w-3xl max-h-[90vh] overflow-y-auto">
-                        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+                <div className="bg-opacity-50 fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
+                    <div className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-lg bg-white shadow-xl">
+                        <div className="flex items-center justify-between border-b border-gray-200 p-6">
                             <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                                    <Shield className="w-5 h-5 text-blue-600" />
+                                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100">
+                                    <Shield className="h-5 w-5 text-blue-600" />
                                 </div>
                                 <h2 className="text-gray-900">Add New User</h2>
                             </div>
@@ -390,7 +413,7 @@ const ManageUsers = ({
                                 onClick={() => setShowAddModal(false)}
                                 className="h-9 w-9"
                             >
-                                <X className="w-5 h-5 text-gray-600" />
+                                <X className="h-5 w-5 text-gray-600" />
                             </Button>
                         </div>
 
@@ -407,12 +430,12 @@ const ManageUsers = ({
 
             {/* Edit User Modal */}
             {showEditModal && selectedUser && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-                    <div className="bg-white rounded-lg shadow-xl w-full max-w-3xl max-h-[90vh] overflow-y-auto">
-                        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+                <div className="bg-opacity-50 fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
+                    <div className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-lg bg-white shadow-xl">
+                        <div className="flex items-center justify-between border-b border-gray-200 p-6">
                             <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                                    <Shield className="w-5 h-5 text-blue-600" />
+                                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100">
+                                    <Shield className="h-5 w-5 text-blue-600" />
                                 </div>
                                 <h2 className="text-gray-900">Edit User</h2>
                             </div>
@@ -426,7 +449,7 @@ const ManageUsers = ({
                                 }}
                                 className="h-9 w-9"
                             >
-                                <X className="w-5 h-5 text-gray-600" />
+                                <X className="h-5 w-5 text-gray-600" />
                             </Button>
                         </div>
 
@@ -448,9 +471,6 @@ const ManageUsers = ({
     );
 };
 
-ManageUsers.layout = (page: React.ReactNode) => (
-    <AppLayout children={page} />
-);
+ManageUsers.layout = (page: React.ReactNode) => <AppLayout children={page} />;
 
 export default ManageUsers;
-
