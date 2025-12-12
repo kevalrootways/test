@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\AccountController;
+use App\Http\Controllers\Admin\UserController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use Laravel\Fortify\Features;
@@ -26,6 +27,19 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::put('{account}', 'update')->name('update');
         Route::delete('{account}', 'destroy')->name('destroy');
         Route::post('table', 'table')->name('table');
+    });
+
+    // Admin Users routes
+    Route::prefix('admin')->as('admin.')->group(function () {
+        Route::prefix('users')->as('users.')->controller(UserController::class)->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::get('create', 'create')->name('create');
+            Route::post('/', 'store')->name('store');
+            Route::get('{user}', 'show')->name('show');
+            Route::get('{user}/edit', 'edit')->name('edit');
+            Route::put('{user}', 'update')->name('update');
+            Route::delete('{user}', 'destroy')->name('destroy');
+        });
     });
 });
 
