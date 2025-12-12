@@ -13,8 +13,16 @@ return new class extends Migration
     {
         Schema::create('users', function (Blueprint $table) {
             $table->id();
+            $table->uuid('uuid')->unique();
+            $table->string('user_id')->unique();
             $table->string('name');
             $table->string('email')->unique();
+            $table->string('phone')->nullable();
+            $table->enum('status', ['Active', 'Inactive', 'Suspended'])->default('Active');
+            $table->string('assigned_store')->nullable();
+            $table->boolean('commission_enabled')->default(false);
+            $table->decimal('commission_rate', 5, 2)->default(0);
+            $table->timestamp('last_login')->nullable();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
             $table->rememberToken();
