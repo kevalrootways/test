@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\AccountController;
+use App\Http\Controllers\Admin\RoleTemplateController;
 use App\Http\Controllers\Admin\UserController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -39,6 +40,17 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::get('{user}/edit', 'edit')->name('edit');
             Route::put('{user}', 'update')->name('update');
             Route::delete('{user}', 'destroy')->name('destroy');
+        });
+
+        // Role Templates routes
+        Route::prefix('role-templates')->as('role-templates.')->controller(RoleTemplateController::class)->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::get('create', 'create')->name('create');
+            Route::post('/', 'store')->name('store');
+            Route::get('{template}', 'show')->name('show');
+            Route::get('{template}/edit', 'edit')->name('edit');
+            Route::put('{template}', 'update')->name('update');
+            Route::delete('{template}', 'destroy')->name('destroy');
         });
     });
 });
