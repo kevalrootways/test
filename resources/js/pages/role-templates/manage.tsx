@@ -28,7 +28,7 @@ interface RoleTemplate {
 }
 
 interface ManageRoleTemplatesProps {
-    templates?: RoleTemplate[];
+    templates?: RoleTemplate[] | { data?: RoleTemplate[] };
     totalTemplates?: number;
     defaultTemplates?: number;
     customTemplates?: number;
@@ -42,6 +42,9 @@ const ManageRoleTemplates = ({
     customTemplates = 0,
     availablePermissions = [],
 }: ManageRoleTemplatesProps) => {
+    const templatesArray = Array.isArray(templates)
+        ? templates
+        : templates?.data || [];
     const [showAddModal, setShowAddModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
     const [selectedTemplate, setSelectedTemplate] =
@@ -52,16 +55,42 @@ const ManageRoleTemplates = ({
     };
 
     const handleDuplicateTemplate = (template: RoleTemplate) => {
-        // Navigate to create page with template data
-        router.visit(RoleTemplateController.create().url, {
-            data: {
+        // Build permissions object for form submission
+        const permissions: Record<string, string> = {};
+        Object.keys(template.permissions).forEach((key) => {
+            permissions[key] = template.permissions[
+                key as keyof typeof template.permissions
+            ]
+                ? '1'
+                : '0';
+        });
+
+        // Directly create duplicate record
+        router.post(
+            RoleTemplateController.store().url,
+            {
                 name: `${template.name} (Copy)`,
                 description: template.description,
-                permissions: template.permissions,
-                commissionEnabled: template.commissionEnabled,
-                defaultCommission: template.defaultCommission,
+                permissions: permissions,
+                commissionEnabled: template.commissionEnabled ? '1' : '0',
+                defaultCommission: template.defaultCommission || 0,
             },
-        });
+            {
+                preserveScroll: true,
+                onSuccess: () => {
+                    // Reload to refresh the templates list
+                    router.visit(RoleTemplateController.index().url, {
+                        only: [
+                            'templates',
+                            'totalTemplates',
+                            'defaultTemplates',
+                            'customTemplates',
+                        ],
+                        preserveScroll: true,
+                    });
+                },
+            },
+        );
     };
 
     const handleDeleteTemplate = (templateId: string, isDefault: boolean) => {
@@ -205,12 +234,12 @@ const ManageRoleTemplates = ({
 
                 {/* Templates Grid */}
                 <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-                    {templates.length === 0 ? (
+                    {templatesArray.length === 0 ? (
                         <div className="col-span-full py-12 text-center text-gray-500">
                             No templates found
                         </div>
                     ) : (
-                        templates.map((template) => (
+                        templatesArray.map((template) => (
                             <div
                                 key={template.id}
                                 className="rounded-lg border border-gray-200 bg-white p-6 transition-shadow hover:shadow-md"

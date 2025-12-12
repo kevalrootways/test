@@ -18,43 +18,24 @@ class RoleTemplateController extends Controller
 {
     public function index(): Response
     {
-        try {
-            $templates = Role::with('permissions')
-                ->orderBy('is_default', 'desc')
-                ->orderBy('created_at', 'desc')
-                ->get();
+        $templates = Role::with('permissions')
+            ->orderBy('is_default', 'desc')
+            ->orderBy('created_at', 'desc')
+            ->get();
 
-            $templatesData = RoleTemplateResource::collection($templates)->resolve();
+        $permissions = Permission::where('guard_name', 'web')
+            ->orderBy('name')
+            ->pluck('name')
+            ->toArray();
 
-            $permissions = Permission::where('guard_name', 'web')
-                ->orderBy('name')
-                ->pluck('name')
-                ->toArray();
-
-            return Inertia::render('role-templates/manage', [
-                'templates' => $templatesData,
-                'totalTemplates' => $templates->count(),
-                'defaultTemplates' => $templates->where('is_default', true)->count(),
-                'customTemplates' => $templates->where('is_default', false)->count(),
-                'availablePermissions' => $permissions,
-                'csrfToken' => csrf_token(),
-            ]);
-        } catch (\Throwable $th) {
-            logError('RoleTemplateController@index', $th);
-            $permissions = Permission::where('guard_name', 'web')
-                ->orderBy('name')
-                ->pluck('name')
-                ->toArray();
-
-            return Inertia::render('role-templates/manage', [
-                'templates' => [],
-                'totalTemplates' => 0,
-                'defaultTemplates' => 0,
-                'customTemplates' => 0,
-                'availablePermissions' => $permissions,
-                'csrfToken' => csrf_token(),
-            ]);
-        }
+        return Inertia::render('role-templates/manage', [
+            'templates' => RoleTemplateResource::collection($templates),
+            'totalTemplates' => $templates->count(),
+            'defaultTemplates' => $templates->where('is_default', true)->count(),
+            'customTemplates' => $templates->where('is_default', false)->count(),
+            'availablePermissions' => $permissions,
+            'csrfToken' => csrf_token(),
+        ]);
     }
 
     public function create(): Response
@@ -75,15 +56,8 @@ class RoleTemplateController extends Controller
 
         DB::beginTransaction();
         try {
-            // Convert permissions from form format to proper array
-            $permissions = [];
-            if (isset($validatedData['permissions']) && is_array($validatedData['permissions'])) {
-                foreach ($validatedData['permissions'] as $key => $value) {
-                    // Handle both boolean and string '1'/'0' values
-                    $permissions[$key] = filter_var($value, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) ?? false;
-                }
-            }
-
+            $permissions = $validatedData['permissions'] ?? [];
+            
             $role = Role::create([
                 'uuid' => (string) Str::uuid(),
                 'name' => $validatedData['name'],
@@ -95,7 +69,7 @@ class RoleTemplateController extends Controller
                 'is_default' => false,
             ]);
 
-            $permissionNames = array_keys(array_filter($permissions));
+            $permissionNames = array_keys(array_filter($permissions, fn($value) => $value === true || $value === '1' || $value === 1));
             if (!empty($permissionNames)) {
                 $permissionIds = Permission::whereIn('name', $permissionNames)
                     ->where('guard_name', 'web')
@@ -123,10 +97,8 @@ class RoleTemplateController extends Controller
                 ->with('permissions')
                 ->firstOrFail();
 
-            $templateData = (new RoleTemplateResource($role))->resolve();
-
             return Inertia::render('role-templates/show', [
-                'template' => $templateData,
+                'template' => new RoleTemplateResource($role),
             ]);
         } catch (\Throwable $th) {
             abort(404, 'Template not found');
@@ -141,15 +113,13 @@ class RoleTemplateController extends Controller
                 ->with('permissions')
                 ->firstOrFail();
 
-            $templateData = (new RoleTemplateResource($role))->resolve();
-
             $permissions = Permission::where('guard_name', 'web')
                 ->orderBy('name')
                 ->pluck('name')
                 ->toArray();
 
             return Inertia::render('role-templates/edit', [
-                'template' => $templateData,
+                'template' => new RoleTemplateResource($role),
                 'availablePermissions' => $permissions,
             ]);
         } catch (\Throwable $th) {
@@ -171,14 +141,7 @@ class RoleTemplateController extends Controller
                 $validatedData['isDefault'] = true;
             }
 
-            // Convert permissions from form format to proper array
-            $permissions = [];
-            if (isset($validatedData['permissions']) && is_array($validatedData['permissions'])) {
-                foreach ($validatedData['permissions'] as $key => $value) {
-                    // Handle both boolean and string '1'/'0' values
-                    $permissions[$key] = filter_var($value, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) ?? false;
-                }
-            }
+            $permissions = $validatedData['permissions'] ?? [];
 
             $role->update([
                 'name' => $validatedData['name'],
@@ -189,7 +152,7 @@ class RoleTemplateController extends Controller
                 'is_default' => $validatedData['isDefault'] ?? $role->is_default,
             ]);
 
-            $permissionNames = array_keys(array_filter($permissions));
+            $permissionNames = array_keys(array_filter($permissions, fn($value) => $value === true || $value === '1' || $value === 1));
             if (!empty($permissionNames)) {
                 $permissionIds = Permission::whereIn('name', $permissionNames)
                     ->where('guard_name', 'web')
@@ -233,4 +196,3 @@ class RoleTemplateController extends Controller
         }
     }
 }
-
