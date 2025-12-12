@@ -14,7 +14,7 @@ export default function AppSidebarLayout({
             <AppContent variant="sidebar" className="overflow-x-hidden flex flex-col">
                 <AppHeader />
                 <div className="flex-1 overflow-y-auto">
-                    {children}
+                {children}
                 </div>
             </AppContent>
             <MobileMenuButton />

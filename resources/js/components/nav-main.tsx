@@ -84,7 +84,7 @@ export function NavMain({ items = [], groups = [] }: { items?: NavItem[]; groups
             const hasActiveChild = item.items.some((subItem) => isItemActive(subItem));
             const isActive = hasActiveChild;
 
-            return (
+    return (
                 <div key={item.title}>
                     <button
                         onClick={() => toggleItem(item.title)}
@@ -129,7 +129,7 @@ export function NavMain({ items = [], groups = [] }: { items?: NavItem[]; groups
                     >
                         {item.icon && <item.icon className={`flex-shrink-0 ${level === 2 ? 'w-4 h-4' : 'w-5 h-5'}`} />}
                         <span className={`truncate ${level === 0 ? 'ml-3' : 'ml-3'} ${level === 2 ? 'text-xs' : 'text-sm'} font-medium`}>{item.title}</span>
-                    </Link>
+                            </Link>
                 ) : (
                     <div className={`w-full flex items-center ${paddingLeft} pr-4 py-3 text-gray-700`}>
                         {item.icon && <item.icon className={`flex-shrink-0 ${level === 2 ? 'w-4 h-4' : 'w-5 h-5'}`} />}
