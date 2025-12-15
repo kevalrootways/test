@@ -122,7 +122,7 @@ const UserInput = ({
     return (
         <div className="space-y-6">
             {/* Basic Information */}
-            <div>
+            <div className="mb-6">
                 <h3 className="mb-4 flex items-center gap-2 text-gray-900">
                     <Lock className="h-4 w-4" />
                     Basic Information
@@ -136,8 +136,8 @@ const UserInput = ({
                             type="text"
                             name="name"
                             defaultValue={data?.name ?? ''}
+                            required
                             placeholder="Enter user full name"
-                            className="w-full"
                         />
                         <InputError message={errors.name} />
                     </div>
@@ -151,8 +151,8 @@ const UserInput = ({
                             type="email"
                             name="email"
                             defaultValue={data?.email ?? ''}
+                            required
                             placeholder="user@dealership.com"
-                            className="w-full"
                         />
                         <InputError message={errors.email} />
                     </div>
@@ -165,23 +165,23 @@ const UserInput = ({
                             type="tel"
                             name="phone"
                             defaultValue={data?.phone ?? ''}
+                            required
                             placeholder="(555) 123-4567"
-                            className="w-full"
                         />
                         <InputError message={errors.phone} />
                     </div>
 
                     <div className="custom-form-field">
                         <Label className="mb-2 block text-gray-700">
-                            Password <span className="text-red-500">*</span>
+                            Password {!data?.id && !data?.uuid && <span className="text-red-500">*</span>}
                         </Label>
                         <div className="relative">
                             <Input
                                 type={showPassword ? 'text' : 'password'}
                                 name="password"
                                 defaultValue={data?.password ?? ''}
-                                placeholder="Enter password"
-                                className="w-full"
+                                required={!data?.id && !data?.uuid}
+                                placeholder={data?.id || data?.uuid ? "Leave blank to keep current password" : "Enter password"}
                             />
                             <Button
                                 type="button"
@@ -197,6 +197,11 @@ const UserInput = ({
                                 )}
                             </Button>
                         </div>
+                        {data?.id || data?.uuid ? (
+                            <p className="mt-2 text-sm text-gray-500">
+                                Leave blank to keep the current password
+                            </p>
+                        ) : null}
                         <InputError message={errors.password} />
                     </div>
 
@@ -219,7 +224,7 @@ const UserInput = ({
             </div>
 
             {/* Role & Permissions */}
-            <div>
+            <div className="mb-6">
                 <h3 className="mb-4 flex items-center gap-2 text-gray-900">
                     <Shield className="h-4 w-4" />
                     Role & Permissions
@@ -353,7 +358,6 @@ const UserInput = ({
                                 min="0"
                                 max="100"
                                 step="0.1"
-                                className="w-full"
                                 placeholder="e.g., 5.0"
                             />
                             <p className="mt-2 text-sm text-gray-600">

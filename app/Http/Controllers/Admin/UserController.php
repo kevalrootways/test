@@ -122,7 +122,7 @@ class UserController extends Controller
         ]);
     }
 
-    public function edit($id): Response|JsonResponse
+    public function edit(Request $request, $id): JsonResponse
     {
         $user = User::where('uuid', $id)
             ->orWhere('id', $id)
@@ -132,16 +132,7 @@ class UserController extends Controller
         $roles = Role::all();
         $permissions = Permission::where('guard_name', 'web')->get();
 
-        // Return JSON if it's an AJAX request (for modal)
-        if (request()->wantsJson() || request()->ajax() || request()->header('X-Requested-With') === 'XMLHttpRequest') {
-            return response()->json([
-                'user' => new UserResource($user),
-                'roles' => RoleResource::collection($roles),
-                'permissions' => PermissionResource::collection($permissions),
-            ]);
-        }
-
-        return Inertia::render('users/edit', [
+        return response()->json([
             'user' => new UserResource($user),
             'roles' => RoleResource::collection($roles),
             'permissions' => PermissionResource::collection($permissions),

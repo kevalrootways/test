@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/app-layout';
 import { Head, router } from '@inertiajs/react';
 import { DataTableRef } from 'datatables.net-react';
-import { Plus, Shield, X } from 'lucide-react';
+import { LoaderCircle, Plus, Shield, X } from 'lucide-react';
 import { useRef, useState } from 'react';
 import CreateUser from './create';
 import EditUser from './edit';
@@ -52,6 +52,10 @@ const ManageUsers = ({
     const [showAddModal, setShowAddModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
     const [selectedUser, setSelectedUser] = useState<string | null>(null);
+    const [userData, setUserData] = useState<any>(null);
+    const [loadingUser, setLoadingUser] = useState(false);
+    const [editRoles, setEditRoles] = useState<Array<{ uuid: string; name: string }>>(roles);
+    const [editPermissions, setEditPermissions] = useState<Permission[]>(permissions);
 
     const handleUserDelete = (uuid: string) => {
         router.delete(UserController.destroy(uuid).url, {
@@ -61,14 +65,50 @@ const ManageUsers = ({
         });
     };
 
-    const handleEditUser = (uuid: string) => {
+    const handleEditUser = async (uuid: string) => {
         setSelectedUser(uuid);
+        setLoadingUser(true);
         setShowEditModal(true);
+        
+        try {
+            const response = await fetch(UserController.edit(uuid).url, {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': csrfToken,
+                },
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to fetch user data');
+            }
+
+            const data = await response.json();
+            setUserData(data.user);
+            // Update roles and permissions from API response if available
+            if (data.roles) {
+                setEditRoles(data.roles);
+            }
+            if (data.permissions) {
+                setEditPermissions(data.permissions);
+            }
+        } catch (error) {
+            console.error('Error fetching user data:', error);
+            alert('Failed to load user data. Please try again.');
+            setShowEditModal(false);
+            setSelectedUser(null);
+        } finally {
+            setLoadingUser(false);
+        }
     };
 
     const handleEditSuccess = () => {
         setShowEditModal(false);
         setSelectedUser(null);
+        setUserData(null);
+        setEditRoles(roles);
+        setEditPermissions(permissions);
         tableAPI.current?.dt()?.ajax.reload(undefined, false);
     };
 
@@ -289,6 +329,9 @@ const ManageUsers = ({
                                 onClick={() => {
                                     setShowEditModal(false);
                                     setSelectedUser(null);
+                                    setUserData(null);
+                                    setEditRoles(roles);
+                                    setEditPermissions(permissions);
                                 }}
                                 className="h-9 w-9"
                             >
@@ -297,12 +340,24 @@ const ManageUsers = ({
                         </div>
 
                         <div className="p-6">
-                            <EditUser
-                                userUuid={selectedUser}
-                                roles={roles}
-                                permissions={permissions}
-                                onSuccess={handleEditSuccess}
-                            />
+                            {loadingUser ? (
+                                <div className="flex items-center justify-center py-8">
+                                    <LoaderCircle className="h-6 w-6 animate-spin text-blue-600" />
+                                    <span className="ml-2 text-gray-600">Loading user data...</span>
+                                </div>
+                            ) : userData ? (
+                                <EditUser
+                                    user={userData}
+                                    userUuid={selectedUser}
+                                    roles={editRoles}
+                                    permissions={editPermissions}
+                                    onSuccess={handleEditSuccess}
+                                />
+                            ) : (
+                                <div className="py-8 text-center text-gray-600">
+                                    Failed to load user data. Please try again.
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>
