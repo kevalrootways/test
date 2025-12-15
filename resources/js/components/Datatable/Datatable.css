@@ -1,0 +1,53 @@
+@import 'datatables.net-dt/css/dataTables.dataTables.css';
+@import 'tailwindcss';
+
+table.dataTable {
+    @apply w-full border border-black text-left text-sm;
+}
+
+table.dataTable thead th {
+    @apply bg-black px-4 py-2 font-bold text-white;
+}
+
+table.dataTable tbody td {
+    @apply !border-b !border-black px-4 py-2 text-left;
+}
+
+/* Ensure first column is properly aligned to the left */
+table.dataTable tbody td:first-child {
+    @apply text-left;
+}
+
+table.dataTable thead th:first-child {
+    @apply text-left font-bold;
+}
+
+div.dt-container .dt-paging .dt-paging-button.current {
+    @apply bg-black px-2 py-1 !text-white;
+    border: 1px solid #000;
+}
+
+div.dt-container .dt-paging .dt-paging-button {
+    @apply px-2 py-1 !text-black;
+}
+
+div.dt-container .dt-paging .dt-paging-button:hover {
+    @apply px-2 py-1 !text-white;
+    border: 1px solid #000;
+}
+
+div.dt-search .dt-input {
+    @apply h-9 rounded-md;
+}
+
+/* Force left alignment for all table cells */
+table.dataTable tbody td,
+table.dataTable tbody td[class*="text-right"],
+table.dataTable tbody td[style*="text-align: right"] {
+    text-align: left !important;
+}
+
+
+table.dataTable th.dt-type-numeric div.dt-column-header{flex-direction: unset;}
+table.dataTable th.dt-type-numeric{text-align: left !important;}
+

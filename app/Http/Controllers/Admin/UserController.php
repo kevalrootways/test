@@ -3,273 +3,248 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use Inertia\Inertia;
+use App\Http\Resources\PermissionResource;
+use App\Http\Resources\RoleResource;
+use App\Http\Resources\UserResource;
+use App\Models\Role;
+use App\Models\User;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
+use Inertia\Inertia;
+use Inertia\Response;
+use Spatie\Permission\Models\Permission;
+use Yajra\DataTables\Facades\DataTables;
 
 class UserController extends Controller
 {
-    public function index()
+    public function index(): Response
     {
-        // Sample data matching the design
-        $users = [
-            [
-                'id' => 'USR-001',
-                'name' => 'Admin User',
-                'email' => 'admin@dealership.com',
-                'phone' => '(555) 111-1111',
-                'role' => 'Super Admin',
-                'status' => 'Active',
-                'lastLogin' => '2024-11-26',
-                'permissions' => ['Dashboard', 'Products', 'Inventory', 'Orders', 'Accounts', 'Warranty', 'Reports', 'Admin'],
-                'assignedStore' => null,
-                'commissionEnabled' => false,
-                'commissionRate' => 0,
-            ],
-            [
-                'id' => 'USR-002',
-                'name' => 'John Manager',
-                'email' => 'john.manager@dealership.com',
-                'phone' => '(555) 222-2222',
-                'role' => 'Manager',
-                'status' => 'Active',
-                'lastLogin' => '2024-11-26',
-                'permissions' => ['Dashboard', 'Products', 'Inventory', 'Orders', 'Accounts', 'Warranty', 'Reports'],
-                'assignedStore' => null,
-                'commissionEnabled' => false,
-                'commissionRate' => 0,
-            ],
-            [
-                'id' => 'USR-003',
-                'name' => 'Sarah Sales',
-                'email' => 'sarah.sales@dealership.com',
-                'phone' => '(555) 333-3333',
-                'role' => 'Sales',
-                'status' => 'Active',
-                'lastLogin' => '2024-11-25',
-                'permissions' => ['Dashboard', 'Orders', 'Accounts', 'Products'],
-                'assignedStore' => null,
-                'commissionEnabled' => true,
-                'commissionRate' => 5.0,
-            ],
-            [
-                'id' => 'USR-004',
-                'name' => 'Mike Inventory',
-                'email' => 'mike.inv@dealership.com',
-                'phone' => '(555) 444-4444',
-                'role' => 'Inventory Manager',
-                'status' => 'Active',
-                'lastLogin' => '2024-11-25',
-                'permissions' => ['Dashboard', 'Inventory', 'Products', 'Orders'],
-                'assignedStore' => null,
-                'commissionEnabled' => false,
-                'commissionRate' => 0,
-            ],
-            [
-                'id' => 'USR-005',
-                'name' => 'Lisa Support',
-                'email' => 'lisa.support@dealership.com',
-                'phone' => '(555) 555-5555',
-                'role' => 'Support',
-                'status' => 'Active',
-                'lastLogin' => '2024-11-24',
-                'permissions' => ['Dashboard', 'Warranty', 'Accounts'],
-                'assignedStore' => null,
-                'commissionEnabled' => false,
-                'commissionRate' => 0,
-            ],
-            [
-                'id' => 'USR-006',
-                'name' => 'David Reports',
-                'email' => 'david.reports@dealership.com',
-                'phone' => '(555) 666-6666',
-                'role' => 'Analyst',
-                'status' => 'Active',
-                'lastLogin' => '2024-11-23',
-                'permissions' => ['Dashboard', 'Reports'],
-                'assignedStore' => null,
-                'commissionEnabled' => false,
-                'commissionRate' => 0,
-            ],
-            [
-                'id' => 'USR-007',
-                'name' => 'Tom Former',
-                'email' => 'tom.former@dealership.com',
-                'phone' => '(555) 777-7777',
-                'role' => 'Sales',
-                'status' => 'Inactive',
-                'lastLogin' => '2024-10-15',
-                'permissions' => ['Dashboard', 'Orders'],
-                'assignedStore' => null,
-                'commissionEnabled' => false,
-                'commissionRate' => 0,
-            ],
-        ];
+        $users = User::with('roles')->get();
+        $roles = Role::all();
+        $permissions = Permission::where('guard_name', 'web')->get();
 
         return Inertia::render('users/manage', [
-            'users' => $users,
-            'totalUsers' => count($users),
-            'activeUsers' => count(array_filter($users, fn($u) => $u['status'] === 'Active')),
-            'adminUsers' => count(array_filter($users, fn($u) => in_array($u['role'], ['Super Admin', 'Manager']))),
-            'roles' => [
-                'Sales',
-                'Manager',
-                'Super Admin',
-                'Inventory Manager',
-                'Support',
-                'Analyst',
-                'Dealers',
-                'Insurance Industry',
-                'Distributors',
-                'Store User',
-            ],
-            'availableAccounts' => [
-                ['id' => 'ACC-001', 'name' => 'John Smith', 'type' => 'Individual'],
-                ['id' => 'ACC-002', 'name' => 'Sarah Johnson', 'type' => 'Individual'],
-                ['id' => 'ACC-005', 'name' => 'ABC Fleet Services', 'type' => 'Business'],
-                ['id' => 'ACC-009', 'name' => 'XYZ Logistics', 'type' => 'Business'],
-                ['id' => 'ACC-011', 'name' => 'Global Motors USA', 'type' => 'Corporate'],
-                ['id' => 'ACC-012', 'name' => 'Texas Fleet Co', 'type' => 'Business'],
-            ],
+            'users' => UserResource::collection($users),
+            'totalUsers' => $users->count(),
+            'activeUsers' => $users->where('status', 'Active')->count(),
+            'adminUsers' => $users->filter(function ($user) {
+                $roleNames = $user->roles->pluck('name')->toArray();
+                return in_array('Super Admin', $roleNames) || in_array('Manager', $roleNames);
+            })->count(),
+            'roles' => RoleResource::collection($roles),
+            'permissions' => PermissionResource::collection($permissions),
+            'csrfToken' => csrf_token(),
         ]);
     }
 
-    public function create()
+    public function create(): Response
     {
+        $roles = Role::all();
+        $permissions = Permission::where('guard_name', 'web')->get();
+
         return Inertia::render('users/create', [
-            'roles' => [
-                'Sales',
-                'Manager',
-                'Super Admin',
-                'Inventory Manager',
-                'Support',
-                'Analyst',
-                'Dealers',
-                'Insurance Industry',
-                'Distributors',
-                'Store User',
-            ],
-            'availableAccounts' => [
-                ['id' => 'ACC-001', 'name' => 'John Smith', 'type' => 'Individual'],
-                ['id' => 'ACC-002', 'name' => 'Sarah Johnson', 'type' => 'Individual'],
-                ['id' => 'ACC-005', 'name' => 'ABC Fleet Services', 'type' => 'Business'],
-                ['id' => 'ACC-009', 'name' => 'XYZ Logistics', 'type' => 'Business'],
-                ['id' => 'ACC-011', 'name' => 'Global Motors USA', 'type' => 'Corporate'],
-                ['id' => 'ACC-012', 'name' => 'Texas Fleet Co', 'type' => 'Business'],
-            ],
+            'roles' => RoleResource::collection($roles),
+            'permissions' => PermissionResource::collection($permissions),
         ]);
     }
 
-    public function store(Request $request)
+    public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|max:255|unique:users,email',
-            'phone' => 'required|string|max:255',
+            'phone' => 'nullable|string|max:255',
             'password' => 'required|string|min:8',
             'role' => 'required|string',
             'status' => 'required|string|in:Active,Inactive,Suspended',
             'assignedStore' => 'nullable|string',
-            'commissionEnabled' => 'boolean',
+            'commissionEnabled' => 'nullable|boolean',
             'commissionRate' => 'nullable|numeric|min:0|max:100',
+            'permissions' => 'nullable|array',
+            'permissions.*' => 'nullable|string',
         ]);
 
         DB::beginTransaction();
         try {
-            // TODO: Create user in database when User model is ready
-            // $user = User::create($validated);
+            $user = User::create([
+                'uuid' => (string) Str::uuid(),
+                'user_id' => 'USR-' . strtoupper(Str::random(8)),
+                'name' => $validated['name'],
+                'email' => $validated['email'],
+                'phone' => $validated['phone'] ?? null,
+                'password' => bcrypt($validated['password']),
+                'status' => $validated['status'],
+                'assigned_store' => $validated['assignedStore'] ?? null,
+                'commission_enabled' => $validated['commissionEnabled'] ?? false,
+                'commission_rate' => $validated['commissionRate'] ?? 0,
+            ]);
+
+            // Assign role
+            if (isset($validated['role'])) {
+                $role = Role::where('name', $validated['role'])->first();
+                if ($role) {
+                    $user->assignRole($role);
+                }
+            }
+
+            // Assign permissions if provided
+            if (isset($validated['permissions']) && is_array($validated['permissions'])) {
+                $permissionNames = array_keys(array_filter($validated['permissions']));
+                if (!empty($permissionNames)) {
+                    $permissions = Permission::whereIn('name', $permissionNames)->get();
+                    $user->syncPermissions($permissions);
+                } else {
+                    $user->syncPermissions([]);
+                }
+            }
 
             DB::commit();
             return redirect()->route('admin.users.index')->with('success', 'User created successfully');
         } catch (\Throwable $th) {
+            logError('UserController@store', $th);
             DB::rollBack();
             return back()->withErrors(['error' => 'Failed to create user'])->withInput();
         }
     }
 
-    public function show($id)
+    public function show($id): Response
     {
-        // TODO: Load user from database when User model is ready
-        // $user = User::findOrFail($id);
-
-        $user = null;
+        $user = User::where('uuid', $id)
+            ->orWhere('id', $id)
+            ->with('roles')
+            ->firstOrFail();
 
         return Inertia::render('users/show', [
-            'user' => $user,
+            'user' => new UserResource($user),
         ]);
     }
 
-    public function edit($id)
+    public function edit($id): Response|JsonResponse
     {
-        // TODO: Load user from database when User model is ready
-        // $user = User::findOrFail($id);
+        $user = User::where('uuid', $id)
+            ->orWhere('id', $id)
+            ->with('roles', 'permissions')
+            ->firstOrFail();
 
-        $user = null;
+        $roles = Role::all();
+        $permissions = Permission::where('guard_name', 'web')->get();
+
+        // Return JSON if it's an AJAX request (for modal)
+        if (request()->wantsJson() || request()->ajax() || request()->header('X-Requested-With') === 'XMLHttpRequest') {
+            return response()->json([
+                'user' => new UserResource($user),
+                'roles' => RoleResource::collection($roles),
+                'permissions' => PermissionResource::collection($permissions),
+            ]);
+        }
 
         return Inertia::render('users/edit', [
-            'user' => $user,
-            'roles' => [
-                'Sales',
-                'Manager',
-                'Super Admin',
-                'Inventory Manager',
-                'Support',
-                'Analyst',
-                'Dealers',
-                'Insurance Industry',
-                'Distributors',
-                'Store User',
-            ],
-            'availableAccounts' => [
-                ['id' => 'ACC-001', 'name' => 'John Smith', 'type' => 'Individual'],
-                ['id' => 'ACC-002', 'name' => 'Sarah Johnson', 'type' => 'Individual'],
-                ['id' => 'ACC-005', 'name' => 'ABC Fleet Services', 'type' => 'Business'],
-                ['id' => 'ACC-009', 'name' => 'XYZ Logistics', 'type' => 'Business'],
-                ['id' => 'ACC-011', 'name' => 'Global Motors USA', 'type' => 'Corporate'],
-                ['id' => 'ACC-012', 'name' => 'Texas Fleet Co', 'type' => 'Business'],
-            ],
+            'user' => new UserResource($user),
+            'roles' => RoleResource::collection($roles),
+            'permissions' => PermissionResource::collection($permissions),
         ]);
     }
 
-    public function update(Request $request, $id)
+    public function update(Request $request, $id): RedirectResponse
     {
+        $user = User::where('uuid', $id)
+            ->orWhere('id', $id)
+            ->firstOrFail();
+
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|email|max:255',
-            'phone' => 'required|string|max:255',
+            'email' => 'required|email|max:255|unique:users,email,' . $user->id,
+            'phone' => 'nullable|string|max:255',
             'password' => 'nullable|string|min:8',
             'role' => 'required|string',
             'status' => 'required|string|in:Active,Inactive,Suspended',
             'assignedStore' => 'nullable|string',
-            'commissionEnabled' => 'boolean',
+            'commissionEnabled' => 'nullable|boolean',
             'commissionRate' => 'nullable|numeric|min:0|max:100',
+            'permissions' => 'nullable|array',
+            'permissions.*' => 'nullable|string',
         ]);
 
         DB::beginTransaction();
         try {
-            // TODO: Update user in database when User model is ready
-            // $user = User::findOrFail($id);
-            // $user->update($validated);
+            $updateData = [
+                'name' => $validated['name'],
+                'email' => $validated['email'],
+                'phone' => $validated['phone'] ?? null,
+                'status' => $validated['status'],
+                'assigned_store' => $validated['assignedStore'] ?? null,
+                'commission_enabled' => $validated['commissionEnabled'] ?? false,
+                'commission_rate' => $validated['commissionRate'] ?? 0,
+            ];
+
+            if (!empty($validated['password'])) {
+                $updateData['password'] = bcrypt($validated['password']);
+            }
+
+            $user->update($updateData);
+
+            // Sync role
+            if (isset($validated['role'])) {
+                $role = Role::where('name', $validated['role'])->first();
+                if ($role) {
+                    $user->syncRoles([$role]);
+                }
+            }
+
+            // Sync permissions if provided
+            if (isset($validated['permissions']) && is_array($validated['permissions'])) {
+                $permissionNames = array_keys(array_filter($validated['permissions']));
+                if (!empty($permissionNames)) {
+                    $permissions = Permission::whereIn('name', $permissionNames)->get();
+                    $user->syncPermissions($permissions);
+                } else {
+                    $user->syncPermissions([]);
+                }
+            }
 
             DB::commit();
             return redirect()->route('admin.users.index')->with('success', 'User updated successfully');
         } catch (\Throwable $th) {
+            logError('UserController@update', $th);
             DB::rollBack();
             return back()->withErrors(['error' => 'Failed to update user'])->withInput();
         }
     }
 
-    public function destroy($id)
+    public function destroy($id): RedirectResponse
     {
         try {
-            // TODO: Delete user from database when User model is ready
-            // $user = User::findOrFail($id);
-            // $user->delete();
+            $user = User::where('uuid', $id)
+                ->orWhere('id', $id)
+                ->firstOrFail();
+
+            $user->delete();
 
             return redirect()->route('admin.users.index')->with('success', 'User deleted successfully');
         } catch (\Throwable $th) {
+            logError('UserController@destroy', $th);
             return back()->withErrors(['error' => 'Failed to delete user']);
         }
     }
-}
 
+    public function table()
+    {
+        $users = User::with('roles')->get()->map(function ($user) {
+            return [
+                'uuid' => $user->uuid ?? $user->id,
+                'user_id' => $user->user_id ?? $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'phone' => $user->phone ?? '-',
+                'role_name' => $user->roles->pluck('name')->implode(', ') ?: 'No Role',
+                'status' => $user->status ?? 'Active',
+                'last_login' => $user->last_login ? $user->last_login->format('Y-m-d') : '-',
+            ];
+        });
+
+        return DataTables::of($users)->make(true);
+    }
+}

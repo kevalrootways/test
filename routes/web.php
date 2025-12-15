@@ -40,6 +40,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::get('{user}/edit', 'edit')->name('edit');
             Route::put('{user}', 'update')->name('update');
             Route::delete('{user}', 'destroy')->name('destroy');
+            Route::post('table', 'table')->name('table');
         });
 
         // Role Templates routes

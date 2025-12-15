@@ -20,9 +20,16 @@ class User extends Authenticatable
      * @var list<string>
      */
     protected $fillable = [
+        'uuid',
+        'user_id',
         'name',
         'email',
+        'phone',
         'password',
+        'status',
+        'assigned_store',
+        'commission_enabled',
+        'commission_rate',
     ];
 
     /**
@@ -48,6 +55,9 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'two_factor_confirmed_at' => 'datetime',
+            'last_login' => 'datetime',
+            'commission_enabled' => 'boolean',
+            'commission_rate' => 'decimal:2',
         ];
     }
 }

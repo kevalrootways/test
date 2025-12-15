@@ -5,6 +5,12 @@ import { Label } from '@/components/ui/label';
 import { DollarSign, Eye, EyeOff, Lock, Shield, Store } from 'lucide-react';
 import { useState } from 'react';
 
+interface Permission {
+    id: string;
+    name: string;
+    guard_name?: string;
+}
+
 interface UserInputProps {
     errors: Record<string, string>;
     data?: {
@@ -19,7 +25,8 @@ interface UserInputProps {
         commissionRate?: number;
         permissions?: string[];
     };
-    roles?: string[];
+    roles?: Array<string | { uuid?: string; name: string }>;
+    permissions?: Permission[];
     availableAccounts?: Array<{ id: string; name: string; type: string }>;
     onRoleChange?: (role: string) => void;
 }
@@ -28,128 +35,62 @@ const UserInput = ({
     errors,
     data,
     roles = [],
+    permissions: availablePermissions = [],
     availableAccounts = [],
     onRoleChange,
 }: UserInputProps) => {
+    const rolesArray = Array.isArray(roles) ? roles : roles?.data || [];
+
     const [showPassword, setShowPassword] = useState(false);
     const [selectedRole, setSelectedRole] = useState(data?.role || 'Sales');
     const [commissionEnabled, setCommissionEnabled] = useState(
         data?.commissionEnabled || false,
     );
-    const [permissions, setPermissions] = useState({
-        dashboard: data?.permissions?.includes('Dashboard') || false,
-        products: data?.permissions?.includes('Products') || false,
-        inventory: data?.permissions?.includes('Inventory') || false,
-        orders: data?.permissions?.includes('Orders') || false,
-        accounts: data?.permissions?.includes('Accounts') || false,
-        warranty: data?.permissions?.includes('Warranty') || false,
-        reports: data?.permissions?.includes('Reports') || false,
-        admin: data?.permissions?.includes('Admin') || false,
-    });
+    const normalizedAvailablePermissions = Array.isArray(availablePermissions)
+        ? availablePermissions
+        : (availablePermissions as any)?.data || [];
+    const initializePermissions = () => {
+        const initialPermissions: Record<string, boolean> = {};
+        if (normalizedAvailablePermissions.length > 0) {
+            normalizedAvailablePermissions.forEach((perm: Permission) => {
+                const permName = perm.name || perm;
+                initialPermissions[permName] =
+                    data?.permissions?.includes(permName) || false;
+            });
+        }
+        return initialPermissions;
+    };
 
+    const [permissions, setPermissions] = useState(initializePermissions());
     const handleRoleChange = (role: string) => {
         setSelectedRole(role);
         if (onRoleChange) {
             onRoleChange(role);
         }
-
-        // Set default permissions based on role
-        let defaultPermissions = {
-            dashboard: true,
-            products: false,
-            inventory: false,
-            orders: false,
-            accounts: false,
-            warranty: false,
-            reports: false,
-            admin: false,
-        };
-
-        switch (role) {
-            case 'Super Admin':
-                defaultPermissions = {
-                    dashboard: true,
-                    products: true,
-                    inventory: true,
-                    orders: true,
-                    accounts: true,
-                    warranty: true,
-                    reports: true,
-                    admin: true,
-                };
-                break;
-            case 'Manager':
-                defaultPermissions = {
-                    dashboard: true,
-                    products: true,
-                    inventory: true,
-                    orders: true,
-                    accounts: true,
-                    warranty: true,
-                    reports: true,
-                    admin: false,
-                };
-                break;
-            case 'Sales':
-                defaultPermissions = {
-                    dashboard: true,
-                    products: true,
-                    inventory: false,
-                    orders: true,
-                    accounts: true,
-                    warranty: false,
-                    reports: false,
-                    admin: false,
-                };
-                break;
-            case 'Inventory Manager':
-                defaultPermissions = {
-                    dashboard: true,
-                    products: true,
-                    inventory: true,
-                    orders: true,
-                    accounts: false,
-                    warranty: false,
-                    reports: false,
-                    admin: false,
-                };
-                break;
-            case 'Support':
-                defaultPermissions = {
-                    dashboard: true,
-                    products: false,
-                    inventory: false,
-                    orders: false,
-                    accounts: true,
-                    warranty: true,
-                    reports: false,
-                    admin: false,
-                };
-                break;
-            case 'Analyst':
-                defaultPermissions = {
-                    dashboard: true,
-                    products: false,
-                    inventory: false,
-                    orders: false,
-                    accounts: false,
-                    warranty: false,
-                    reports: true,
-                    admin: false,
-                };
-                break;
-            case 'Store User':
-                defaultPermissions = {
-                    dashboard: false,
-                    products: false,
-                    inventory: false,
-                    orders: false,
-                    accounts: false,
-                    warranty: false,
-                    reports: false,
-                    admin: false,
-                };
-                break;
+        const roleObj = rolesArray.find((r) => {
+            const roleName = typeof r === 'string' ? r : r.name;
+            return roleName === role;
+        });
+        const defaultPermissions: Record<string, boolean> = {};
+        if (normalizedAvailablePermissions.length > 0) {
+            normalizedAvailablePermissions.forEach((perm: Permission) => {
+                const permName = perm.name || perm;
+                defaultPermissions[permName] = false;
+            });
+            if (
+                roleObj &&
+                typeof roleObj !== 'string' &&
+                (roleObj as any).permissions
+            ) {
+                const rolePermissions = (roleObj as any).permissions.map(
+                    (p: any) => p.name || p,
+                );
+                normalizedAvailablePermissions.forEach((perm: Permission) => {
+                    const permName = perm.name || perm;
+                    defaultPermissions[permName] =
+                        rolePermissions.includes(permName);
+                });
+            }
         }
 
         setPermissions(defaultPermissions);
@@ -158,11 +99,9 @@ const UserInput = ({
     const handlePermissionChange = (permission: string) => {
         setPermissions({
             ...permissions,
-            [permission]: !permissions[permission as keyof typeof permissions],
+            [permission]: !(permissions[permission] || false),
         });
     };
-
-    // Store permissions in hidden inputs
     const permissionInputs = Object.entries(permissions)
         .filter(([_, value]) => value)
         .map(([key, _]) => (
@@ -173,17 +112,23 @@ const UserInput = ({
                 value="1"
             />
         ));
+    const getPermissionDisplayName = (permissionName: string): string => {
+        return permissionName
+            .split('_')
+            .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+            .join(' ');
+    };
 
     return (
         <div className="space-y-6">
             {/* Basic Information */}
             <div>
-                <h3 className="text-gray-900 mb-4 flex items-center gap-2">
-                    <Lock className="w-4 h-4" />
+                <h3 className="mb-4 flex items-center gap-2 text-gray-900">
+                    <Lock className="h-4 w-4" />
                     Basic Information
                 </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="md:col-span-2">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <div className="custom-form-field md:col-span-2">
                         <Label className="mb-2 block text-gray-700">
                             Full Name <span className="text-red-500">*</span>
                         </Label>
@@ -191,14 +136,13 @@ const UserInput = ({
                             type="text"
                             name="name"
                             defaultValue={data?.name ?? ''}
-                            required
                             placeholder="Enter user full name"
                             className="w-full"
                         />
                         <InputError message={errors.name} />
                     </div>
 
-                    <div>
+                    <div className="custom-form-field">
                         <Label className="mb-2 block text-gray-700">
                             Email Address{' '}
                             <span className="text-red-500">*</span>
@@ -207,40 +151,35 @@ const UserInput = ({
                             type="email"
                             name="email"
                             defaultValue={data?.email ?? ''}
-                            required
                             placeholder="user@dealership.com"
                             className="w-full"
                         />
                         <InputError message={errors.email} />
                     </div>
 
-                    <div>
+                    <div className="custom-form-field">
                         <Label className="mb-2 block text-gray-700">
-                            Phone Number{' '}
-                            <span className="text-red-500">*</span>
+                            Phone Number <span className="text-red-500">*</span>
                         </Label>
                         <Input
                             type="tel"
                             name="phone"
                             defaultValue={data?.phone ?? ''}
-                            required
                             placeholder="(555) 123-4567"
                             className="w-full"
                         />
                         <InputError message={errors.phone} />
                     </div>
 
-                    <div>
+                    <div className="custom-form-field">
                         <Label className="mb-2 block text-gray-700">
-                            Password{' '}
-                            <span className="text-red-500">*</span>
+                            Password <span className="text-red-500">*</span>
                         </Label>
                         <div className="relative">
                             <Input
                                 type={showPassword ? 'text' : 'password'}
                                 name="password"
                                 defaultValue={data?.password ?? ''}
-                                required
                                 placeholder="Enter password"
                                 className="w-full"
                             />
@@ -249,7 +188,7 @@ const UserInput = ({
                                 variant="ghost"
                                 size="icon"
                                 onClick={() => setShowPassword(!showPassword)}
-                                className="absolute right-3 top-1/2 h-8 w-8 -translate-y-1/2 transform text-gray-400 hover:text-gray-600"
+                                className="absolute top-1/2 right-3 h-8 w-8 -translate-y-1/2 transform text-gray-400 hover:text-gray-600"
                             >
                                 {showPassword ? (
                                     <EyeOff className="h-5 w-5" />
@@ -261,14 +200,14 @@ const UserInput = ({
                         <InputError message={errors.password} />
                     </div>
 
-                    <div>
+                    <div className="custom-form-field">
                         <Label className="mb-2 block text-gray-700">
                             Status
                         </Label>
                         <select
                             name="status"
                             defaultValue={data?.status ?? 'Active'}
-                            className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                         >
                             <option value="Active">Active</option>
                             <option value="Inactive">Inactive</option>
@@ -281,8 +220,8 @@ const UserInput = ({
 
             {/* Role & Permissions */}
             <div>
-                <h3 className="text-gray-900 mb-4 flex items-center gap-2">
-                    <Shield className="w-4 h-4" />
+                <h3 className="mb-4 flex items-center gap-2 text-gray-900">
+                    <Shield className="h-4 w-4" />
                     Role & Permissions
                 </h3>
                 <div className="mb-4">
@@ -292,17 +231,22 @@ const UserInput = ({
                     <select
                         name="role"
                         value={selectedRole}
-                        required
                         onChange={(e) => handleRoleChange(e.target.value)}
-                        className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                     >
-                        {roles.map((role) => (
-                            <option key={role} value={role}>
-                                {role}
-                            </option>
-                        ))}
+                        {rolesArray.map((role) => {
+                            const roleName =
+                                typeof role === 'string' ? role : role.name;
+                            const roleValue =
+                                typeof role === 'string' ? role : role.name;
+                            return (
+                                <option key={roleValue} value={roleValue}>
+                                    {roleName}
+                                </option>
+                            );
+                        })}
                     </select>
-                    <p className="text-sm text-gray-500 mt-2">
+                    <p className="mt-2 text-sm text-gray-500">
                         Selecting a role will automatically set default
                         permissions. You can customize them below.
                     </p>
@@ -310,46 +254,86 @@ const UserInput = ({
                 </div>
 
                 {/* Permissions Checkboxes */}
-                <div className="bg-gray-50 rounded-lg p-4">
-                    <p className="text-sm text-gray-700 mb-3">
+                <div className="rounded-lg bg-gray-50 p-4">
+                    <p className="mb-3 text-sm text-gray-700">
                         Module Access Permissions:
                     </p>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                        {Object.entries(permissions).map(([key, value]) => (
-                            <Label
-                                key={key}
-                                className="flex items-center gap-2 cursor-pointer"
-                            >
-                                <input
-                                    type="checkbox"
-                                    checked={value}
-                                    onChange={() => handlePermissionChange(key)}
-                                    className="h-4 w-4 rounded text-blue-600"
-                                />
-                                <span className="text-sm text-gray-700">
-                                    {key.charAt(0).toUpperCase() +
-                                        key.slice(1).replace(/([A-Z])/g, ' $1')}
-                                </span>
-                            </Label>
-                        ))}
-                    </div>
+                    {normalizedAvailablePermissions.length > 0 ? (
+                        <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+                            {normalizedAvailablePermissions.map(
+                                (perm: Permission) => {
+                                    const permName = perm.name || perm;
+                                    const permId = (perm as any).id || permName;
+                                    const isChecked =
+                                        permissions[permName] || false;
+                                    return (
+                                        <Label
+                                            key={permId}
+                                            className="flex cursor-pointer items-center gap-2"
+                                        >
+                                            <input
+                                                type="checkbox"
+                                                checked={isChecked}
+                                                onChange={() =>
+                                                    handlePermissionChange(
+                                                        permName,
+                                                    )
+                                                }
+                                                className="h-4 w-4 rounded text-blue-600"
+                                            />
+                                            <span className="text-sm text-gray-700">
+                                                {getPermissionDisplayName(
+                                                    permName,
+                                                )}
+                                            </span>
+                                        </Label>
+                                    );
+                                },
+                            )}
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+                            {Object.entries(permissions).map(([key, value]) => (
+                                <Label
+                                    key={key}
+                                    className="flex cursor-pointer items-center gap-2"
+                                >
+                                    <input
+                                        type="checkbox"
+                                        checked={value}
+                                        onChange={() =>
+                                            handlePermissionChange(key)
+                                        }
+                                        className="h-4 w-4 rounded text-blue-600"
+                                    />
+                                    <span className="text-sm text-gray-700">
+                                        {getPermissionDisplayName(key)}
+                                    </span>
+                                </Label>
+                            ))}
+                        </div>
+                    )}
                     {permissionInputs}
                 </div>
             </div>
 
             {/* Commission Settings */}
             <div className="rounded-lg border border-green-200 bg-green-50 p-4">
-                <h3 className="text-gray-900 mb-4 flex items-center gap-2">
-                    <DollarSign className="w-4 h-4" />
+                <h3 className="mb-4 flex items-center gap-2 text-gray-900">
+                    <DollarSign className="h-4 w-4" />
                     Commission Settings
                 </h3>
                 <div className="space-y-4">
-                    <Label className="flex items-center gap-2 cursor-pointer">
+                    <input type="hidden" name="commissionEnabled" value="0" />
+                    <Label className="flex cursor-pointer items-center gap-2">
                         <input
                             type="checkbox"
                             name="commissionEnabled"
+                            value="1"
                             checked={commissionEnabled}
-                            onChange={(e) => setCommissionEnabled(e.target.checked)}
+                            onChange={(e) =>
+                                setCommissionEnabled(e.target.checked)
+                            }
                             className="h-4 w-4 rounded text-blue-600"
                         />
                         <span className="text-gray-700">
@@ -358,7 +342,7 @@ const UserInput = ({
                     </Label>
 
                     {commissionEnabled && (
-                        <div>
+                        <div className="custom-form-field">
                             <Label className="mb-2 block text-gray-700">
                                 Commission Rate (%)
                             </Label>
@@ -372,9 +356,9 @@ const UserInput = ({
                                 className="w-full"
                                 placeholder="e.g., 5.0"
                             />
-                            <p className="text-sm text-gray-600 mt-2">
-                                This user will earn this percentage of sales from
-                                their assigned accounts
+                            <p className="mt-2 text-sm text-gray-600">
+                                This user will earn this percentage of sales
+                                from their assigned accounts
                             </p>
                             <InputError message={errors.commissionRate} />
                         </div>
@@ -385,8 +369,8 @@ const UserInput = ({
             {/* Store Assignment - Only show for Store User role */}
             {selectedRole === 'Store User' && (
                 <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
-                    <h3 className="text-gray-900 mb-4 flex items-center gap-2">
-                        <Store className="w-4 h-4" />
+                    <h3 className="mb-4 flex items-center gap-2 text-gray-900">
+                        <Store className="h-4 w-4" />
                         Store Assignment
                     </h3>
                     <div>
@@ -398,16 +382,17 @@ const UserInput = ({
                             name="assignedStore"
                             defaultValue={data?.assignedStore ?? ''}
                             required={data?.role === 'Store User'}
-                            className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                         >
                             <option value="">Select Store/Account</option>
                             {availableAccounts.map((account) => (
                                 <option key={account.id} value={account.id}>
-                                    {account.id} - {account.name} ({account.type})
+                                    {account.id} - {account.name} (
+                                    {account.type})
                                 </option>
                             ))}
                         </select>
-                        <p className="text-sm text-gray-600 mt-2">
+                        <p className="mt-2 text-sm text-gray-600">
                             This user will only have access to their assigned
                             store's products and cannot access the main staff
                             portal.
@@ -421,4 +406,3 @@ const UserInput = ({
 };
 
 export default UserInput;
-
